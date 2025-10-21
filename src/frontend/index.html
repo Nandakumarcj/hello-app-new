@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hello App</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 2rem; }
+    .card { max-width: 520px; padding: 1.5rem; border: 1px solid #ddd; border-radius: 12px; }
+    input, button { font-size: 1rem; padding: 0.5rem 0.75rem; }
+    button { cursor: pointer; }
+    .row { display: flex; gap: 0.5rem; align-items: center; }
+    .result { margin-top: 1rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Hello App</h1>
+    <p>Type your name and get a friendly greeting.</p>
+    <div class="row">
+      <input id="name" placeholder="Your name" />
+      <button id="btn">Say hello</button>
+    </div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    const input = document.getElementById('name');
+    const btn = document.getElementById('btn');
+    const result = document.getElementById('result');
+
+    btn.addEventListener('click', async () => {
+      const name = input.value.trim() || 'World';
+      result.textContent = '...';
+      try {
+        const res = await fetch(`/api/hello?name=${encodeURIComponent(name)}`);
+        const data = await res.json();
+        result.textContent = data.message || JSON.stringify(data);
+      } catch (e) {
+        result.textContent = 'Something went wrong';
+      }
+    });
+  </script>
+</body>
+</html>

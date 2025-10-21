@@ -1,0 +1,12 @@
+{
+  "name": "hello-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/backend/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
