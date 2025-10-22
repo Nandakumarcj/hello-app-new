@@ -20,13 +20,9 @@ function validateName(raw) {
   if (name.length > 100) return { ok: false, code: 400, error: 'Name too long' };
 
   // Reject control characters (like newlines, tabs, non-printable)
-  // allow basic printable unicode letters, numbers and punctuation.
-  // This regex finds control chars; if any exist, treat as invalid.
   const controlCharRegex = /[\x00-\x1F\x7F]/;
   if (controlCharRegex.test(name)) return { ok: false, code: 400, error: 'Invalid name' };
 
-  // Optional: further sanitization could occur here (strip HTML, etc.)
-  // For now return the trimmed name.
   return { ok: true, name };
 }
 
@@ -39,12 +35,21 @@ app.get('/api/hello', (req, res) => {
     return res.status(result.code).json({ error: result.error });
   }
 
-  // All good
   const safeName = result.name;
-  return res.json({ message: `Hello, ${safeName}!` });
+
+  // Provide ISO timestamp and a human-friendly formatted version
+  const d = new Date();
+  const timeISO = d.toISOString();
+  const timeFriendly = d.toLocaleString();
+
+  return res.json({
+    message: `Hello, ${safeName}!`,
+    time: timeISO,           // machine-readable
+    timeFriendly: timeFriendly // human-readable
+  });
 });
 
-// A small health endpoint (useful later)
+// Health endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });

@@ -14,6 +14,9 @@
     .error { color: #b00020; font-weight: 700; }
     .success { color: #0b6e2a; }
     .muted { color: #666; font-weight: 400; margin-top: 0.5rem; }
+    .meta { color: #444; font-weight: 500; margin-top: 0.25rem; font-size: 0.95rem; }
+    .history { margin-top: 1rem; font-size: 0.95rem; color: #333; }
+    .history-item { margin-bottom: 0.25rem; }
   </style>
 </head>
 <body>
@@ -27,54 +30,79 @@
     </div>
 
     <div class="result" id="result" aria-live="polite"></div>
+    <div class="meta" id="meta"></div>
     <div class="muted">Tip: leave blank to test validation.</div>
+
+    <div class="history" id="history" aria-live="polite"></div>
   </div>
 
   <script>
     const input = document.getElementById('name');
     const btn = document.getElementById('btn');
     const result = document.getElementById('result');
+    const meta = document.getElementById('meta');
+    const historyEl = document.getElementById('history');
 
-    // Helper to render messages
+    // keep last 3 greetings in memory (client-side)
+    const lastGreetings = [];
+
+    function renderHistory() {
+      if (lastGreetings.length === 0) {
+        historyEl.innerHTML = '';
+        return;
+      }
+      historyEl.innerHTML = '<strong>Recent greetings:</strong>';
+      lastGreetings.slice().reverse().forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.textContent = `${item.message} — ${item.timeFriendly}`;
+        historyEl.appendChild(div);
+      });
+    }
+
     function showMessage(text, type = 'success') {
       result.className = 'result ' + (type === 'error' ? 'error' : 'success');
       result.textContent = text;
     }
 
     async function callHello(name) {
-      // Keep this GET request consistent with the backend endpoint
       const url = `/api/hello?name=${encodeURIComponent(name)}`;
       try {
         const res = await fetch(url);
         const data = await res.json().catch(() => ({}));
 
-        // If backend returned an error field or non-2xx status -> show error
         if (!res.ok || data.error) {
           const errText = data && data.error ? data.error : 'Unexpected error';
           showMessage(errText, 'error');
+          meta.textContent = '';
           return;
         }
 
-        // Success
         if (data && data.message) {
           showMessage(data.message, 'success');
+          // show friendly time if present
+          meta.textContent = data.timeFriendly ? `At: ${data.timeFriendly}` : '';
+          // store history (client-side) using the friendly time
+          lastGreetings.push({ message: data.message, timeFriendly: data.timeFriendly || data.time });
+          if (lastGreetings.length > 3) lastGreetings.shift();
+          renderHistory();
         } else {
           showMessage(JSON.stringify(data), 'success');
+          meta.textContent = '';
         }
       } catch (e) {
         showMessage('Network or server error', 'error');
+        meta.textContent = '';
       }
     }
 
     btn.addEventListener('click', async () => {
-      const name = input.value; // allow backend to validate trimming/empty etc.
-      // Quick UI feedback
+      const name = input.value; // let backend validate trimming/empty etc.
       result.textContent = '...';
       result.className = 'result';
       await callHello(name);
     });
 
-    // allow Enter to trigger the same action
     input.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') {
         ev.preventDefault();
