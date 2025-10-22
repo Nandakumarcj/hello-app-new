@@ -11,17 +11,23 @@
     button { cursor: pointer; }
     .row { display: flex; gap: 0.5rem; align-items: center; }
     .result { margin-top: 1rem; font-weight: 600; }
+    .error { color: #b00020; font-weight: 700; }
+    .success { color: #0b6e2a; }
+    .muted { color: #666; font-weight: 400; margin-top: 0.5rem; }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Hello App</h1>
     <p>Type your name and get a friendly greeting.</p>
+
     <div class="row">
       <input id="name" placeholder="Your name" />
       <button id="btn">Say hello</button>
     </div>
-    <div class="result" id="result"></div>
+
+    <div class="result" id="result" aria-live="polite"></div>
+    <div class="muted">Tip: leave blank to test validation.</div>
   </div>
 
   <script>
@@ -29,15 +35,50 @@
     const btn = document.getElementById('btn');
     const result = document.getElementById('result');
 
-    btn.addEventListener('click', async () => {
-      const name = input.value.trim() || 'World';
-      result.textContent = '...';
+    // Helper to render messages
+    function showMessage(text, type = 'success') {
+      result.className = 'result ' + (type === 'error' ? 'error' : 'success');
+      result.textContent = text;
+    }
+
+    async function callHello(name) {
+      // Keep this GET request consistent with the backend endpoint
+      const url = `/api/hello?name=${encodeURIComponent(name)}`;
       try {
-        const res = await fetch(`/api/hello?name=${encodeURIComponent(name)}`);
-        const data = await res.json();
-        result.textContent = data.message || JSON.stringify(data);
+        const res = await fetch(url);
+        const data = await res.json().catch(() => ({}));
+
+        // If backend returned an error field or non-2xx status -> show error
+        if (!res.ok || data.error) {
+          const errText = data && data.error ? data.error : 'Unexpected error';
+          showMessage(errText, 'error');
+          return;
+        }
+
+        // Success
+        if (data && data.message) {
+          showMessage(data.message, 'success');
+        } else {
+          showMessage(JSON.stringify(data), 'success');
+        }
       } catch (e) {
-        result.textContent = 'Something went wrong';
+        showMessage('Network or server error', 'error');
+      }
+    }
+
+    btn.addEventListener('click', async () => {
+      const name = input.value; // allow backend to validate trimming/empty etc.
+      // Quick UI feedback
+      result.textContent = '...';
+      result.className = 'result';
+      await callHello(name);
+    });
+
+    // allow Enter to trigger the same action
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        btn.click();
       }
     });
   </script>
