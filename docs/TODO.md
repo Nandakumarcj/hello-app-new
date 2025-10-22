@@ -3,6 +3,8 @@
 ## Now
 - [ ] Fill in SUMMARY with any changes you want
 - [ ] Run app with `npm start`
+- [ ] Add input validation to /api/hello
+
 
 ## Next
 - [ ] Add input validation (disallow empty names)
